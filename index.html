@@ -24,24 +24,26 @@
 
     .field { margin-bottom:14px; }
     .field > label { display:block; color:var(--muted); font-size:14px; margin-bottom:6px; }
-    input[type="text"], input[type="date"], input[type="time"] {
+    input[type="text"], input[type="date"], input[type="time"], select {
       width:100%; padding:12px; border:1px solid #e5e7eb;
       border-radius:10px; background:#fff; font-size:16px;
     }
-    input:focus { outline:2px solid var(--accent); border-color:transparent; }
+    input:focus, select:focus { outline:2px solid var(--accent); border-color:transparent; }
+    select:disabled { background:#f3f4f6; color:#9ca3af; }
 
     .acoes { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .acao input { position:absolute; opacity:0; pointer-events:none; }
-    .acao span {
-      display:block; text-align:center; padding:14px 8px;
+    .turnos { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+    .opt input { position:absolute; opacity:0; pointer-events:none; }
+    .opt span {
+      display:block; text-align:center; padding:14px 6px;
       border:1px solid #d1d5db; border-radius:10px; background:#fff;
       cursor:pointer; font-size:15px;
     }
-    .acao input:checked + span {
+    .opt input:checked + span {
       background:var(--bg); color:var(--accent);
       border-color:var(--bg); font-weight:600;
     }
-    .acao input:focus-visible + span { outline:2px solid var(--accent); }
+    .opt input:focus-visible + span { outline:2px solid var(--accent); }
 
     button#enviar {
       width:100%; padding:14px; border-radius:10px; border:none;
@@ -73,8 +75,15 @@
     </div>
 
     <div class="field">
+      <label>Turno</label>
+      <div class="turnos" id="turnos"></div>
+    </div>
+
+    <div class="field">
       <label for="roteiro">Roteiro</label>
-      <input id="roteiro" type="text" required />
+      <select id="roteiro" required disabled>
+        <option value="">Selecione o turno primeiro</option>
+      </select>
     </div>
 
     <div class="field">
@@ -90,11 +99,11 @@
     <div class="field">
       <label>Ação</label>
       <div class="acoes">
-        <label class="acao">
+        <label class="opt">
           <input type="radio" name="acao" value="Chegada a Fábrica" required />
           <span>Chegada a Fábrica</span>
         </label>
-        <label class="acao">
+        <label class="opt">
           <input type="radio" name="acao" value="Finalização do roteiro" />
           <span>Finalização do roteiro</span>
         </label>
@@ -116,13 +125,138 @@
 <script>
 /* ==========================
    CONFIGURAÇÃO
-   Cole aqui a URL do app da Web gerada ao implantar o Apps Script (Code.gs)
 ========================== */
-const SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzqy5vA_bXJWu7igJapd6N3l8oQVyBCxbJ68OWTzGn0hzlUxpcpUCb4ANPxtB1dArxw2w/exec";
+const SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxPLLdxpdI_2_3_tqYIXgIfMqh0ZFccs5eGz8qBH39nr6Rl5AijBAj8lNg5A1EFdWRBdA/exec";
+
+/* Roteiros por turno.
+   ATENÇÃO: esta lista também existe no Code.gs (usada pelo relatório diário).
+   Se mudar aqui, mude lá também. */
+const ROTEIROS = {
+  "Turno 1": [
+    "T1 - R104 - ABRANTES",
+    "T1 - R131 - SIMÕES FILHO",
+    "T1 - R158 - MATA DE S. JOÃO",
+    "T1 - R159 - DIAS DÀVILA",
+    "T1 - R231 - CAMAÇARI",
+    "T1 - R232 - CAMAÇARI",
+    "T1 - R233 - CAMAÇARI",
+    "T1 - R234 - CAMAÇARI",
+    "T1 - R235 - CAMAÇARI",
+    "T1 - R28 - SALVADOR",
+    "T1 - R29 - SALVADOR",
+    "T1 - R30 - SALVADOR",
+    "T1 - R31 - SALVADOR",
+    "T1 - R32 - SALVADOR",
+    "T1 - R33 - SALVADOR",
+    "T1 - R34 SALVADOR",
+    "T1 - R35 - SALVADOR"
+  ],
+  "Turno 2": [
+    "T2 - R129 - SIMÕES FILHO",
+    "T2 - R130 - SIMÕES FILHO",
+    "T2 - R104 - ABRANTES",
+    "T2 - R160 - MATA DE SÃO JOÃO",
+    "T2 - R161 - MATA DE SÃO JOÃO",
+    "T2 - R162 - DIAS DÀVILA",
+    "T2 - R21 - SALVADOR",
+    "T2 - R22 - SALVADOR",
+    "T2 - R23 - SALVADOR",
+    "T2 - R231 - CAMAÇARI",
+    "T2 - R232 - CAMAÇARI",
+    "T2 - R233 - CAMAÇARI",
+    "T2 - R234 - Camaçari",
+    "T2 - R235 - CAMAÇARI",
+    "T2 - R24 - SALVADOR",
+    "T2 - R25 - SALVADOR",
+    "T2 - R26 - SALVADOR",
+    "T2 - R27 - SALVADOR",
+    "T2 - R28 - SALVADOR",
+    "T2 - R29 - SALVADOR",
+    "T2 - R30 - SALVADOR"
+  ],
+  "Turno 3": [
+    "T3 - R04 - SALVADOR",
+    "T3 - 158 - MATA",
+    "T3 - R02 - SALVADOR",
+    "T3 - R03 - SALVADOR",
+    "T3 - R131 - SIMÕES FILHO",
+    "T3 - R159 - DIAS DÀVILA",
+    "T3 - R204 - CAMAÇARI",
+    "T3 - R205 - CAMAÇARI"
+  ],
+  "ADM": [
+    "ADM 231 - CAMAÇARI",
+    "ADM - 160 - MATA DE SÃO JOÃO",
+    "ADM 01 - SALVADOR",
+    "ADM 03 - SALVADOR",
+    "ADM 08 - SALVADOR",
+    "ADM 09 - SALVADOR",
+    "ADM 10 - SALVADOR",
+    "ADM 101 - VILAS DE ABRANTES",
+    "ADM 106 - VILAS DE ABRANTES",
+    "ADM 131 - SIMÕES FILHO",
+    "ADM 135 - SIMÕES FILHO",
+    "ADM 14 - SALVADOR",
+    "ADM 155 - MATA DE S. JOÃO",
+    "ADM 159 - MATA DE S. JOÃO",
+    "ADM 16 - SALVADOR",
+    "ADM 161 - DIAS DÀVILA",
+    "ADM 17 - SALVADOR",
+    "ADM 18 - SALVADOR",
+    "ADM 21 - SALVADOR",
+    "ADM 22 - SALVADOR",
+    "ADM 223 - CAMAÇARI",
+    "ADM 227 - CAMAÇARI",
+    "ADM 228 - CAMAÇARI",
+    "ADM 229 - CAMAÇARI",
+    "ADM 230 - CAMAÇARI",
+    "ADM 233 - CAMAÇARI",
+    "ADM 26 - SALVADOR",
+    "ADM 27 - SALVADOR",
+    "ADM 29 - SALVADOR",
+    "ADM 33 - SALVADOR",
+    "ADM 36 - SALVADOR",
+    "ADM 57 - LAURO DE FREITAS"
+  ],
+  "Restaurante": [
+    "04H ÀS 13:21 - R01 - SALVADOR",
+    "04H ÀS 13:21 - R02 - CAMAÇARI",
+    "09H ÀS 19 - R01 - LAURO DE FREITAS",
+    "12H ÀS 21:30 - R01 - SALVADOR"
+  ]
+};
 
 const form = document.getElementById("form");
 const btn = document.getElementById("enviar");
 const msg = document.getElementById("msg");
+const selRoteiro = document.getElementById("roteiro");
+const boxTurnos = document.getElementById("turnos");
+
+/* Botões de turno */
+Object.keys(ROTEIROS).forEach((turno, i) => {
+  const lab = document.createElement("label");
+  lab.className = "opt";
+  lab.innerHTML = '<input type="radio" name="turno" required><span></span>';
+  lab.querySelector("input").value = turno;
+  lab.querySelector("span").textContent = turno;
+  boxTurnos.appendChild(lab);
+});
+
+/* Ao escolher o turno, carrega os roteiros dele */
+boxTurnos.addEventListener("change", () => {
+  const turno = form.querySelector('input[name="turno"]:checked').value;
+  selRoteiro.innerHTML = "";
+  const ph = document.createElement("option");
+  ph.value = "";
+  ph.textContent = "Selecione o roteiro";
+  selRoteiro.appendChild(ph);
+  ROTEIROS[turno].forEach(r => {
+    const op = document.createElement("option");
+    op.value = op.textContent = r;
+    selRoteiro.appendChild(op);
+  });
+  selRoteiro.disabled = false;
+});
 
 /* Data de hoje (horário local) como padrão */
 function hojeISO() {
@@ -141,18 +275,16 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (btn.disabled) return;
 
-  if (SHEETS_WEBAPP_URL.startsWith("COLE_AQUI")) {
-    mostrar("URL do Apps Script não configurada.", "erro");
-    return;
-  }
-
   const dataISO = document.getElementById("data").value;
   const acao = form.querySelector('input[name="acao"]:checked');
+  const turno = form.querySelector('input[name="turno"]:checked');
+  if (!turno) { mostrar("Selecione o turno.", "erro"); return; }
+  if (!selRoteiro.value) { mostrar("Selecione o roteiro.", "erro"); return; }
   if (!acao) { mostrar("Selecione a ação.", "erro"); return; }
 
   const registro = {
     data: dataISO.split("-").reverse().join("/"),
-    roteiro: document.getElementById("roteiro").value.trim(),
+    roteiro: selRoteiro.value,
     veiculo: document.getElementById("veiculo").value.trim(),
     motorista: document.getElementById("motorista").value.trim(),
     acao: acao.value,
@@ -175,8 +307,9 @@ form.addEventListener("submit", async (e) => {
 
     mostrar("Registro enviado com sucesso!", "ok");
 
-    /* Limpa os campos, mantendo a data */
-    ["roteiro", "veiculo", "motorista", "horario"].forEach(id => {
+    /* Limpa os campos, mantendo data e turno */
+    selRoteiro.value = "";
+    ["veiculo", "motorista", "horario"].forEach(id => {
       document.getElementById(id).value = "";
     });
     acao.checked = false;
