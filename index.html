@@ -24,11 +24,13 @@
 
     .field { margin-bottom:14px; }
     .field > label { display:block; color:var(--muted); font-size:14px; margin-bottom:6px; }
-    input[type="text"], input[type="date"], input[type="time"], select {
+    input[type="text"], input[type="date"], input[type="time"], select, textarea {
       width:100%; padding:12px; border:1px solid #e5e7eb;
       border-radius:10px; background:#fff; font-size:16px;
     }
-    input:focus, select:focus { outline:2px solid var(--accent); border-color:transparent; }
+    textarea { resize:vertical; }
+    .opcional { color:#9ca3af; font-size:13px; }
+    input:focus, select:focus, textarea:focus { outline:2px solid var(--accent); border-color:transparent; }
     select:disabled { background:#f3f4f6; color:#9ca3af; }
 
     .acoes { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -113,6 +115,11 @@
     <div class="field">
       <label for="horario">Horário</label>
       <input id="horario" type="time" required />
+    </div>
+
+    <div class="field">
+      <label for="justificativa">Justificativa <span class="opcional">(opcional)</span></label>
+      <textarea id="justificativa" rows="2"></textarea>
     </div>
 
     <button id="enviar" type="submit">Enviar</button>
@@ -300,7 +307,8 @@ form.addEventListener("submit", async (e) => {
     veiculo: document.getElementById("veiculo").value.trim(),
     motorista: document.getElementById("motorista").value.trim(),
     acao: acao.value,
-    horario: document.getElementById("horario").value
+    horario: document.getElementById("horario").value,
+    justificativa: document.getElementById("justificativa").value.trim()
   };
 
   btn.disabled = true;
@@ -321,7 +329,7 @@ form.addEventListener("submit", async (e) => {
 
     /* Limpa os campos, mantendo data e turno */
     selRoteiro.value = "";
-    ["veiculo", "motorista", "horario"].forEach(id => {
+    ["veiculo", "motorista", "horario", "justificativa"].forEach(id => {
       document.getElementById(id).value = "";
     });
     acao.checked = false;
