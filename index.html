@@ -2,132 +2,268 @@
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BYD - Registro de Roteiros</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
   <meta name="theme-color" content="#0b2545" />
+  <title>BYD - Registro de Roteiros</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
 
   <style>
-    :root { --bg:#0b2545; --card:#ffffff; --muted:#6b7280; --accent:#facc15; }
-    * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; }
-    html, body { height: 100%; }
-    body { margin:0; background:#f3f4f6; color:#111827; }
-
-    header { background:var(--bg); color:#fff; padding:14px 16px; }
-    h1 { margin:0; font-size:20px; }
-    header small { color:#cbd5e1; }
-
-    main { padding:16px; max-width:640px; margin:0 auto; }
-    .card {
-      background:var(--card); border-radius:16px;
-      padding:16px; box-shadow:0 6px 20px rgba(0,0,0,.06); margin-bottom:16px;
+    :root {
+      --ink:#0b2545;
+      --amber:#ffb81c;
+      --paper:#e8edf3;
+      --sheet:#ffffff;
+      --field:#f4f6f9;
+      --line:#d3dbe6;
+      --text:#0f1b2d;
+      --muted:#586579;
+      --sel:#0b2545;
+      --ok:#0f8a4b;
+      --err:#c62828;
+      --led-bg:#050b16;
+      --f-body:"Barlow", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --f-disp:"Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper:#060d18; --sheet:#0e1a2e; --field:#0a1424; --line:#24344f;
+        --text:#e9eff8; --muted:#9aa9be; --sel:#1d4a85; --err:#ff6b6b;
+      }
     }
 
-    .field { margin-bottom:14px; }
-    .field > label { display:block; color:var(--muted); font-size:14px; margin-bottom:6px; }
+    * { box-sizing:border-box; }
+    html { -webkit-text-size-adjust:100%; }
+    body {
+      margin:0; background:var(--paper); color:var(--text);
+      font-family:var(--f-body); font-size:17px; line-height:1.4;
+    }
+
+    /* ---------- topo + letreiro ---------- */
+    .topo { background:var(--ink); color:#fff; padding:20px 16px 44px; }
+    .topo-in { max-width:560px; margin:0 auto; }
+    h1 { margin:0; font-family:var(--f-disp); font-weight:700; font-size:26px; letter-spacing:.01em; }
+    .sub { margin:2px 0 16px; color:#9db3d1; font-size:15px; }
+
+    .letreiro {
+      background:var(--led-bg); border-radius:12px; padding:16px 18px 14px;
+      box-shadow:inset 0 0 0 2px #15253f, 0 10px 24px rgba(0,0,0,.28);
+    }
+    .led { position:relative; color:var(--amber); }
+    .led::after { /* malha de pontos: dá o aspecto de painel de LED */
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background:radial-gradient(circle at center, transparent 1.1px, var(--led-bg) 1.6px) 0 0 / 4px 4px;
+    }
+    .led.vazio { opacity:.55; }
+    .codigo {
+      font-family:var(--f-disp); font-weight:700; line-height:1;
+      font-size:clamp(46px, 15vw, 76px); letter-spacing:.02em; text-transform:uppercase;
+      overflow-wrap:anywhere;
+    }
+    .codigo.longo { font-size:clamp(34px, 10.5vw, 54px); }
+    .cidade {
+      font-family:var(--f-disp); font-weight:600; font-size:26px; line-height:1.15;
+      margin-top:6px; text-transform:uppercase; letter-spacing:.03em;
+    }
+    .led.troca .codigo, .led.troca .cidade { animation:troca .22s ease-out; }
+    @keyframes troca { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+    .linha-status { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; min-height:34px; }
+    .status { display:inline-flex; align-items:center; gap:8px; color:#c9d6ea; font-weight:600; font-size:15px; }
+    .dot { width:10px; height:10px; border-radius:50%; background:#3b4b66; flex:none; }
+    .dot.ativo { background:#33d17a; box-shadow:0 0 0 3px rgba(51,209,122,.22); }
+    .hora { font-family:var(--f-disp); font-weight:700; font-size:30px; color:var(--amber); letter-spacing:.04em; }
+
+    /* ---------- formulário ---------- */
+    .folha {
+      max-width:560px; margin:-24px auto 0; background:var(--sheet);
+      border-radius:24px 24px 0 0; padding:22px 16px 0; position:relative;
+    }
+    .campo { margin-bottom:20px; }
+    .rotulo { display:block; font-weight:600; font-size:15px; color:var(--muted); margin-bottom:8px; }
+    .opcional { font-weight:400; }
+
     input[type="text"], input[type="date"], input[type="time"], select, textarea {
-      width:100%; padding:12px; border:1px solid #e5e7eb;
-      border-radius:10px; background:#fff; font-size:16px;
+      width:100%; min-height:52px; padding:12px 14px; font:inherit; font-size:17px; color:var(--text);
+      background:var(--field); border:1.5px solid var(--line); border-radius:10px;
+      appearance:none; -webkit-appearance:none;
     }
-    textarea { resize:vertical; }
-    .opcional { color:#9ca3af; font-size:13px; }
-    input:focus, select:focus, textarea:focus { outline:2px solid var(--accent); border-color:transparent; }
-    select:disabled { background:#f3f4f6; color:#9ca3af; }
+    textarea { resize:vertical; min-height:84px; }
+    select {
+      padding-right:42px; text-overflow:ellipsis;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237b8798' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 14px center;
+    }
+    select:disabled { opacity:.55; }
+    input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+      outline:3px solid var(--amber); outline-offset:2px; border-color:var(--ink);
+    }
+
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip, .tile { position:relative; }
+    .chip input, .tile input { position:absolute; opacity:0; pointer-events:none; }
+    .chip span {
+      display:flex; align-items:center; min-height:48px; padding:0 18px;
+      border:1.5px solid var(--line); border-radius:999px; background:var(--field);
+      font-weight:600; font-size:16px; cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+    }
+    .chip input:checked + span { background:var(--sel); border-color:var(--sel); color:#fff; }
+
+    .dupla { display:grid; grid-template-columns:1fr 1.4fr; gap:12px; }
 
     .acoes { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .turnos { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
-    .opt input { position:absolute; opacity:0; pointer-events:none; }
-    .opt span {
-      display:block; text-align:center; padding:14px 6px;
-      border:1px solid #d1d5db; border-radius:10px; background:#fff;
-      cursor:pointer; font-size:15px;
+    .tile span {
+      display:flex; flex-direction:column; align-items:flex-start; gap:10px;
+      min-height:92px; padding:14px; border:1.5px solid var(--line); border-radius:14px;
+      background:var(--field); font-weight:600; font-size:16px; line-height:1.2; cursor:pointer;
+      transition:background .15s, color .15s, border-color .15s;
     }
-    .opt input:checked + span {
-      background:var(--bg); color:var(--accent);
-      border-color:var(--bg); font-weight:600;
-    }
-    .opt input:focus-visible + span { outline:2px solid var(--accent); }
+    .tile svg { width:28px; height:28px; color:var(--muted); }
+    .tile input:checked + span { background:var(--sel); border-color:var(--sel); color:#fff; }
+    .tile input:checked + span svg { color:var(--amber); }
+    .chip input:focus-visible + span, .tile input:focus-visible + span { outline:3px solid var(--amber); outline-offset:2px; }
 
+    .hora-linha { display:flex; gap:10px; }
+    .hora-linha input { flex:1; }
+    button.secundario {
+      flex:none; min-height:52px; padding:0 20px; border-radius:10px; cursor:pointer;
+      border:1.5px solid var(--ink); background:transparent; color:var(--text);
+      font:inherit; font-weight:700; font-size:16px;
+    }
+    @media (prefers-color-scheme: dark) { button.secundario { border-color:var(--amber); color:var(--amber); } }
+
+    .campo.erro input[type="text"], .campo.erro input[type="date"], .campo.erro input[type="time"],
+    .campo.erro select, .campo.erro .chip span, .campo.erro .tile span { border-color:var(--err); }
+    .campo.erro > .rotulo { color:var(--err); }
+
+    .barra {
+      position:sticky; bottom:0; margin:0 -16px; padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+      background:linear-gradient(to top, var(--sheet) 78%, transparent);
+    }
     button#enviar {
-      width:100%; padding:14px; border-radius:10px; border:none;
-      background:var(--bg); color:#fff; font-size:16px; font-weight:600; cursor:pointer;
+      width:100%; min-height:56px; border:none; border-radius:14px; cursor:pointer;
+      background:var(--amber); color:var(--ink); font-family:var(--f-body); font-weight:700; font-size:18px;
+      box-shadow:0 6px 16px rgba(255,184,28,.35);
     }
-    button#enviar:disabled { opacity:.6; cursor:default; }
+    button#enviar:active { transform:translateY(1px); }
+    button#enviar:disabled { opacity:.65; cursor:default; box-shadow:none; }
 
-    #msg { margin-top:12px; padding:10px 12px; border-radius:10px; font-size:14px; display:none; }
-    #msg.ok { display:block; background:#dcfce7; color:#166534; }
-    #msg.erro { display:block; background:#fee2e2; color:#991b1b; }
+    footer { text-align:center; padding:18px 16px 28px; color:var(--muted); font-size:14px; background:var(--sheet); max-width:560px; margin:0 auto; }
 
-    footer { text-align:center; padding:16px; color:#6b7280; }
+    /* ---------- aviso ---------- */
+    #toast {
+      position:fixed; left:50%; top:calc(12px + env(safe-area-inset-top)); z-index:10;
+      width:calc(100% - 32px); max-width:520px; padding:14px 16px; border-radius:12px;
+      color:#fff; font-weight:600; opacity:0; transform:translate(-50%, -12px); pointer-events:none;
+      transition:opacity .2s, transform .2s;
+    }
+    #toast.show { opacity:1; transform:translate(-50%, 0); }
+    #toast.ok { background:var(--ok); }
+    #toast.erro { background:var(--err); }
+    @media (prefers-color-scheme: dark) { #toast.erro { background:#b42323; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation:none !important; transition:none !important; }
+    }
   </style>
 </head>
 
 <body>
 
-<header>
-  <h1>BYD - Registro de Roteiros</h1>
-  <small>Chegada à fábrica e finalização do roteiro</small>
+<header class="topo">
+  <div class="topo-in">
+    <h1>Registro de roteiros</h1>
+    <p class="sub">Operação BYD</p>
+
+    <div class="letreiro" aria-hidden="true">
+      <div class="led vazio" id="led">
+        <div class="codigo" id="ledCodigo">Roteiro</div>
+        <div class="cidade" id="ledCidade">Escolha o turno</div>
+      </div>
+      <div class="linha-status">
+        <span class="status"><i class="dot" id="ledDot"></i><span id="ledStatus">Aguardando registro</span></span>
+        <span class="hora" id="ledHora"></span>
+      </div>
+    </div>
+  </div>
 </header>
 
-<main>
-  <form id="form" class="card" autocomplete="off">
+<main class="folha">
+  <form id="form" novalidate autocomplete="off">
 
-    <div class="field">
-      <label for="data">Data</label>
-      <input id="data" type="date" required />
+    <div class="campo">
+      <label class="rotulo" for="data">Data</label>
+      <input id="data" type="date" />
     </div>
 
-    <div class="field">
-      <label>Turno</label>
-      <div class="turnos" id="turnos"></div>
+    <div class="campo" id="gTurno">
+      <span class="rotulo" id="lTurno">Turno</span>
+      <div class="chips" id="turnos" role="radiogroup" aria-labelledby="lTurno"></div>
     </div>
 
-    <div class="field">
-      <label for="roteiro">Roteiro</label>
-      <select id="roteiro" required disabled>
+    <div class="campo">
+      <label class="rotulo" for="roteiro">Roteiro</label>
+      <select id="roteiro" disabled>
         <option value="">Selecione o turno primeiro</option>
       </select>
     </div>
 
-    <div class="field">
-      <label for="veiculo">Veículo</label>
-      <input id="veiculo" type="text" required />
+    <div class="dupla">
+      <div class="campo">
+        <label class="rotulo" for="veiculo">Veículo</label>
+        <input id="veiculo" type="text" />
+      </div>
+      <div class="campo">
+        <label class="rotulo" for="motorista">Motorista</label>
+        <input id="motorista" type="text" />
+      </div>
     </div>
 
-    <div class="field">
-      <label for="motorista">Motorista</label>
-      <input id="motorista" type="text" required />
-    </div>
-
-    <div class="field">
-      <label>Ação</label>
-      <div class="acoes">
-        <label class="opt">
-          <input type="radio" name="acao" value="Chegada a Fábrica" required />
-          <span>Chegada a Fábrica</span>
+    <div class="campo" id="gAcao">
+      <span class="rotulo" id="lAcao">Ação</span>
+      <div class="acoes" role="radiogroup" aria-labelledby="lAcao">
+        <label class="tile">
+          <input type="radio" name="acao" value="Chegada a Fábrica" />
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h11"/><path d="m10 6 6 6-6 6"/><path d="M21 4v16"/></svg>
+            Chegada a Fábrica
+          </span>
         </label>
-        <label class="opt">
+        <label class="tile">
           <input type="radio" name="acao" value="Finalização do roteiro" />
-          <span>Finalização do roteiro</span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/></svg>
+            Finalização do roteiro
+          </span>
         </label>
       </div>
     </div>
 
-    <div class="field">
-      <label for="horario">Horário</label>
-      <input id="horario" type="time" required />
+    <div class="campo">
+      <label class="rotulo" for="horario">Horário</label>
+      <div class="hora-linha">
+        <input id="horario" type="time" />
+        <button type="button" class="secundario" id="agora">Agora</button>
+      </div>
     </div>
 
-    <div class="field">
-      <label for="justificativa">Justificativa <span class="opcional">(opcional)</span></label>
-      <textarea id="justificativa" rows="2"></textarea>
+    <div class="campo">
+      <label class="rotulo" for="justificativa">Justificativa <span class="opcional">(opcional)</span></label>
+      <textarea id="justificativa" rows="3"></textarea>
     </div>
 
-    <button id="enviar" type="submit">Enviar</button>
-    <div id="msg"></div>
+    <div class="barra">
+      <button id="enviar" type="submit">Enviar registro</button>
+    </div>
   </form>
 </main>
 
-<footer><small>&copy; Operação BYD</small></footer>
+<footer>&copy; Operação BYD</footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* ==========================
@@ -245,23 +381,53 @@ const ROTEIROS = {
   ]
 };
 
-const form = document.getElementById("form");
-const btn = document.getElementById("enviar");
-const msg = document.getElementById("msg");
-const selRoteiro = document.getElementById("roteiro");
-const boxTurnos = document.getElementById("turnos");
+const $ = (id) => document.getElementById(id);
+const form = $("form");
+const btn = $("enviar");
+const toast = $("toast");
+const selRoteiro = $("roteiro");
+const boxTurnos = $("turnos");
 
-/* Botões de turno */
-Object.keys(ROTEIROS).forEach((turno, i) => {
+/* ==========================
+   AVISOS
+========================== */
+let toastTimer;
+function aviso(texto, tipo) {
+  clearTimeout(toastTimer);
+  toast.textContent = texto;
+  toast.className = "show " + tipo;
+  toastTimer = setTimeout(() => { toast.className = ""; }, tipo === "ok" ? 4000 : 6000);
+}
+
+function invalido(el, texto) {
+  aviso(texto, "erro");
+  const campo = el.closest(".campo");
+  if (campo) campo.classList.add("erro");
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  if (el.focus && el.tagName !== "DIV") el.focus({ preventScroll: true });
+}
+
+/* tira a marca de erro quando o usuário mexe no campo */
+function limpaErro(e) {
+  const campo = e.target.closest(".campo");
+  if (campo) campo.classList.remove("erro");
+  if (toast.classList.contains("erro")) toast.className = "";
+}
+form.addEventListener("input", limpaErro);
+form.addEventListener("change", limpaErro);
+
+/* ==========================
+   TURNO -> ROTEIROS
+========================== */
+Object.keys(ROTEIROS).forEach((turno) => {
   const lab = document.createElement("label");
-  lab.className = "opt";
-  lab.innerHTML = '<input type="radio" name="turno" required><span></span>';
+  lab.className = "chip";
+  lab.innerHTML = '<input type="radio" name="turno"><span></span>';
   lab.querySelector("input").value = turno;
   lab.querySelector("span").textContent = turno;
   boxTurnos.appendChild(lab);
 });
 
-/* Ao escolher o turno, carrega os roteiros dele */
 boxTurnos.addEventListener("change", () => {
   const turno = form.querySelector('input[name="turno"]:checked').value;
   selRoteiro.innerHTML = "";
@@ -269,7 +435,7 @@ boxTurnos.addEventListener("change", () => {
   ph.value = "";
   ph.textContent = "Selecione o roteiro";
   selRoteiro.appendChild(ph);
-  ROTEIROS[turno].forEach(r => {
+  ROTEIROS[turno].forEach((r) => {
     const op = document.createElement("option");
     op.value = op.textContent = r;
     selRoteiro.appendChild(op);
@@ -277,43 +443,99 @@ boxTurnos.addEventListener("change", () => {
   selRoteiro.disabled = false;
 });
 
-/* Data de hoje (horário local) como padrão */
+/* ==========================
+   LETREIRO (resumo ao vivo)
+========================== */
+function partes(r) {
+  const p = r.split(" - ").map((s) => s.trim()).filter(Boolean);
+  if (p.length < 2) return { codigo: r, cidade: "" };
+  return { codigo: p.slice(0, -1).join(" · "), cidade: p[p.length - 1] };
+}
+
+function renderLetreiro() {
+  const turno = form.querySelector('input[name="turno"]:checked');
+  const acao = form.querySelector('input[name="acao"]:checked');
+  const rot = selRoteiro.value;
+
+  let codigo = "Roteiro", cidade = "Escolha o turno", vazio = true;
+  if (rot) {
+    const p = partes(rot);
+    codigo = p.codigo; cidade = p.cidade; vazio = false;
+  } else if (turno) {
+    codigo = turno.value; cidade = "Escolha o roteiro"; vazio = false;
+  }
+
+  const led = $("led");
+  const mudou = $("ledCodigo").textContent !== codigo || $("ledCidade").textContent !== cidade;
+  $("ledCodigo").textContent = codigo;
+  $("ledCidade").textContent = cidade;
+  $("ledCodigo").classList.toggle("longo", codigo.length > 12);
+  led.classList.toggle("vazio", vazio);
+  if (mudou) {
+    led.classList.remove("troca");
+    void led.offsetWidth;
+    led.classList.add("troca");
+  }
+
+  $("ledStatus").textContent = acao ? acao.value : "Aguardando registro";
+  $("ledDot").classList.toggle("ativo", !!acao);
+  $("ledHora").textContent = $("horario").value;
+}
+form.addEventListener("change", renderLetreiro);
+form.addEventListener("input", renderLetreiro);
+
+/* ==========================
+   DATA E HORA
+========================== */
 function hojeISO() {
   const d = new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 10);
 }
-document.getElementById("data").value = hojeISO();
+$("data").value = hojeISO();
 
-function mostrar(texto, tipo) {
-  msg.textContent = texto;
-  msg.className = tipo;
-}
+$("agora").addEventListener("click", () => {
+  const d = new Date();
+  $("horario").value =
+    String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  $("horario").closest(".campo").classList.remove("erro");
+  renderLetreiro();
+});
 
+/* ==========================
+   ENVIO
+========================== */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (btn.disabled) return;
 
-  const dataISO = document.getElementById("data").value;
-  const acao = form.querySelector('input[name="acao"]:checked');
+  const dataISO = $("data").value;
   const turno = form.querySelector('input[name="turno"]:checked');
-  if (!turno) { mostrar("Selecione o turno.", "erro"); return; }
-  if (!selRoteiro.value) { mostrar("Selecione o roteiro.", "erro"); return; }
-  if (!acao) { mostrar("Selecione a ação.", "erro"); return; }
+  const acao = form.querySelector('input[name="acao"]:checked');
+  const veiculo = $("veiculo").value.trim();
+  const motorista = $("motorista").value.trim();
+  const horario = $("horario").value;
+
+  if (!dataISO) return invalido($("data"), "Informe a data.");
+  if (!turno) return invalido($("gTurno"), "Selecione o turno.");
+  if (!selRoteiro.value) return invalido(selRoteiro, "Selecione o roteiro.");
+  if (!veiculo) return invalido($("veiculo"), "Informe o veículo.");
+  if (!motorista) return invalido($("motorista"), "Informe o motorista.");
+  if (!acao) return invalido($("gAcao"), "Selecione a ação.");
+  if (!horario) return invalido($("horario"), "Informe o horário.");
 
   const registro = {
     data: dataISO.split("-").reverse().join("/"),
     roteiro: selRoteiro.value,
-    veiculo: document.getElementById("veiculo").value.trim(),
-    motorista: document.getElementById("motorista").value.trim(),
+    veiculo: veiculo,
+    motorista: motorista,
     acao: acao.value,
-    horario: document.getElementById("horario").value,
-    justificativa: document.getElementById("justificativa").value.trim()
+    horario: horario,
+    justificativa: $("justificativa").value.trim()
   };
 
   btn.disabled = true;
   btn.textContent = "Enviando...";
-  msg.className = "";
 
   try {
     const resp = await fetch(SHEETS_WEBAPP_URL, {
@@ -325,22 +547,23 @@ form.addEventListener("submit", async (e) => {
 
     if (json.status !== "ok") throw new Error(json.message || "Erro");
 
-    mostrar("Registro enviado com sucesso!", "ok");
+    aviso("Registro enviado.", "ok");
 
     /* Limpa os campos, mantendo data e turno */
     selRoteiro.value = "";
-    ["veiculo", "motorista", "horario", "justificativa"].forEach(id => {
-      document.getElementById(id).value = "";
-    });
+    ["veiculo", "motorista", "horario", "justificativa"].forEach((id) => { $(id).value = ""; });
     acao.checked = false;
+    renderLetreiro();
   } catch (err) {
     console.error(err);
-    mostrar("Falha ao enviar. Verifique a conexão e tente novamente.", "erro");
+    aviso("Não foi possível enviar. Verifique a conexão e tente de novo.", "erro");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Enviar";
+    btn.textContent = "Enviar registro";
   }
 });
+
+renderLetreiro();
 </script>
 
 </body>
