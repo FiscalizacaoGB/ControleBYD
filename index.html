@@ -427,7 +427,7 @@
 /* ==========================
    CONFIGURAÇÃO
 ========================== */
-const SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxPLLdxpdI_2_3_tqYIXgIfMqh0ZFccs5eGz8qBH39nr6Rl5AijBAj8lNg5A1EFdWRBdA/exec";
+const SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzqy5vA_bXJWu7igJapd6N3l8oQVyBCxbJ68OWTzGn0hzlUxpcpUCb4ANPxtB1dArxw2w/exec";
 
 /* Roteiros por turno.
    ATENÇÃO: esta lista também existe no Code.gs (usada pelo relatório diário).
@@ -781,7 +781,7 @@ function chaveRoteiro(s) {
   const t = semAcento(s).toUpperCase().replace(/[-–]/g, " ").replace(/\s+/g, " ").trim();
   let m;
   if ((m = t.match(/^ADM\s*0*(\d+)\b/))) return "ADM " + m[1];
-  if ((m = t.match(/^(T[123])\s*R?\s*0*(\d+)\b/))) return m[1] + " R" + m[2];
+  if ((m = t.match(/^T[123]?\s*R?\s*0*(\d+)\b/))) return "T R" + m[1]; /* o código vale para qualquer turno: T1 R28 = T2 R28 = "T - R28" */
   if ((m = t.match(/^(\d{1,2}H AS [\d:]+)\s*R?\s*0*(\d+)\b/))) return m[1] + " R" + m[2];
   return t;
 }
@@ -817,7 +817,8 @@ function prepararEquip(v) {
     if (linhas.has(k)) return;
     const codigos = {};
     Object.keys(colTipo).forEach((i) => {
-      codigos[colTipo[i]] = String(r[i] === undefined ? "" : r[i]).trim();
+      const val = String(r[i] === undefined ? "" : r[i]).trim();
+      codigos[colTipo[i]] = /^x+$/i.test(val) ? "" : val; /* "xxxxx" = sem código nesse tipo */
     });
     linhas.set(k, { nome: nome, codigos: codigos });
   });
