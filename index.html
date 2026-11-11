@@ -191,6 +191,24 @@
     .rodape-it { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-bottom:18px; color:var(--muted); font-size:14px; }
     .ajuda { margin:-8px 0 20px; color:var(--muted); font-size:14px; overflow-wrap:anywhere; }
 
+    /* lista de escolha do veículo (com busca) */
+    .combo { position:relative; }
+    .combo input {
+      padding-right:42px;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237b8798' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 14px center;
+    }
+    .combo-lista {
+      position:absolute; z-index:6; left:0; right:0; top:calc(100% + 6px);
+      margin:0; padding:6px; list-style:none; max-height:min(320px, 45vh); overflow-y:auto; overscroll-behavior:contain;
+      background:var(--sheet); border:1.5px solid var(--line); border-radius:12px;
+      box-shadow:0 12px 28px rgba(5,11,22,.28);
+    }
+    .combo-lista li { padding:13px 12px; border-radius:8px; font-weight:600; font-size:17px; cursor:pointer; }
+    .combo-lista li.ativo { background:var(--field); }
+    .combo-lista li[aria-selected="true"] { background:var(--sel); color:#fff; }
+    .combo-lista li.vazio { color:var(--muted); font-weight:400; cursor:default; }
+
     footer { text-align:center; padding:18px 16px 28px; color:var(--muted); font-size:14px; background:var(--sheet); max-width:560px; margin:0 auto; }
 
     /* ---------- administrador (senha) ---------- */
@@ -346,8 +364,10 @@
 
   <div class="campo">
     <label class="rotulo" for="itVeiculo">Veículo</label>
-    <input id="itVeiculo" type="text" list="listaFrota" autocomplete="off" autocapitalize="characters" placeholder="Ex.: CS 10740" />
-    <datalist id="listaFrota"></datalist>
+    <div class="combo" id="combo">
+      <input id="itVeiculo" type="text" role="combobox" aria-expanded="false" aria-controls="comboLista" aria-autocomplete="list" autocomplete="off" autocapitalize="characters" placeholder="Escolha ou digite para buscar" />
+      <ul class="combo-lista" id="comboLista" role="listbox" aria-label="Veículos da frota" hidden></ul>
+    </div>
   </div>
 
   <div class="resultado" id="itResultado" role="status" aria-live="polite"></div>
@@ -407,7 +427,7 @@
 /* ==========================
    CONFIGURAÇÃO
 ========================== */
-const SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzqy5vA_bXJWu7igJapd6N3l8oQVyBCxbJ68OWTzGn0hzlUxpcpUCb4ANPxtB1dArxw2w/exec";
+const SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxPLLdxpdI_2_3_tqYIXgIfMqh0ZFccs5eGz8qBH39nr6Rl5AijBAj8lNg5A1EFdWRBdA/exec";
 
 /* Roteiros por turno.
    ATENÇÃO: esta lista também existe no Code.gs (usada pelo relatório diário).
@@ -780,7 +800,7 @@ function separaObs(cel) {
   return m ? { nome: m[1], obs: m[2].trim() } : { nome: cel, obs: "" };
 }
 
-const estado = { equip: null, frota: null, carregando: false, erro: "", quando: 0 };
+const estado = { equip: null, frota: null, lista: [], carregando: false, erro: "", detalhe: "", quando: 0 };
 
 function prepararEquip(v) {
   if (!v || !v.length) return null;
@@ -842,38 +862,43 @@ async function carregarDados() {
   if (estado.carregando) return;
   estado.carregando = true;
   renderItinerario();
+  let detalhe = "";
   try {
-    const resp = await fetch(SHEETS_WEBAPP_URL, { method: "GET", cache: "no-store" });
-    const json = await resp.json();
-    if (json.status !== "ok") throw new Error(json.message || "Erro");
+    const resp = await fetch(SHEETS_WEBAPP_URL + "?t=" + Date.now());
+    const texto = await resp.text();
+    let json;
+    try {
+      json = JSON.parse(texto);
+    } catch (e) {
+      detalhe = "O Apps Script respondeu algo que não são os dados da planilha. Salve o Code.gs novo e crie uma nova versão da implantação.";
+      throw e;
+    }
+    if (json.status !== "ok") {
+      detalhe = "O Apps Script respondeu: " + (json.message || "erro");
+      throw new Error(detalhe);
+    }
     estado.equip = prepararEquip(json.equipamentos);
     estado.frota = prepararFrota(json.frota);
+    /* lista da frota em ordem natural: CS 8940, CS 9740, CS 10720... */
+    estado.lista = estado.frota
+      ? Array.from(estado.frota.veiculos.values()).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { numeric: true }))
+      : [];
+    /* mantém o veículo escolhido, se ele ainda existir */
+    if (combo.sel) combo.sel = estado.frota ? (estado.frota.veiculos.get(chaveVeic(combo.sel.nome)) || null) : null;
     estado.erro = "";
+    estado.detalhe = "";
     estado.quando = Date.now();
   } catch (err) {
     console.error(err);
-    estado.erro = "Não foi possível carregar os códigos. Verifique a conexão.";
+    estado.erro = "Não foi possível carregar os códigos.";
+    estado.detalhe = detalhe ||
+      "Sem resposta do servidor. Verifique a conexão. Se a internet estiver boa, o Apps Script provavelmente ainda não tem a nova versão (Implantar > Gerenciar implantações > Nova versão).";
   } finally {
     estado.carregando = false;
-    preencheFrota();
+    if (!ulV.hidden) desenhaCombo();
     renderItinerario();
     renderAdminLista();
   }
-}
-
-/* sugestões do campo Veículo (ordem natural: CS 8940, CS 9740, CS 10720...) */
-function preencheFrota() {
-  const dl = $("listaFrota");
-  dl.innerHTML = "";
-  if (!estado.frota) return;
-  Array.from(estado.frota.veiculos.values())
-    .map((v) => v.nome)
-    .sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }))
-    .forEach((n) => {
-      const op = document.createElement("option");
-      op.value = n;
-      dl.appendChild(op);
-    });
 }
 
 /* ==========================
@@ -898,18 +923,119 @@ function preencheFrota() {
   });
 })();
 
-function buscaVeiculo(txt) {
-  const k = chaveVeic(txt);
-  if (!k || !estado.frota) return { item: null };
-  const exato = estado.frota.veiculos.get(k);
-  if (exato) return { item: exato };
-  if (/^\d+$/.test(k)) { /* só o número: aceita se for único na frota */
-    const lista = estado.frota.porNumero.get(k) || [];
-    if (lista.length === 1) return { item: lista[0] };
-    if (lista.length > 1) return { item: null, ambiguo: lista.map((x) => x.nome) };
-  }
-  return { item: null };
+/* ---- lista de escolha do veículo: só aceita veículos da aba frota; digitar filtra a lista ---- */
+const combo = { sel: null, opcoes: [], ativo: -1 };
+const inpV = $("itVeiculo");
+const ulV = $("comboLista");
+const toqueNaTela = () => window.matchMedia("(pointer: coarse)").matches;
+
+function filtraCombo() {
+  const txt = inpV.value.trim();
+  if (!txt || (combo.sel && txt === combo.sel.nome)) return estado.lista;
+  const q = chaveVeic(txt);
+  return estado.lista.filter((v) => chaveVeic(v.nome).includes(q));
 }
+
+function marcaAtivo(rolar) {
+  ulV.querySelectorAll("li.ativo").forEach((l) => l.classList.remove("ativo"));
+  const li = combo.ativo >= 0 ? ulV.children[combo.ativo] : null;
+  if (li) {
+    li.classList.add("ativo");
+    inpV.setAttribute("aria-activedescendant", li.id);
+    if (rolar) li.scrollIntoView({ block: "nearest" });
+  } else {
+    inpV.removeAttribute("aria-activedescendant");
+  }
+}
+
+function desenhaCombo() {
+  ulV.innerHTML = "";
+  combo.opcoes = [];
+  combo.ativo = -1;
+  const msg = (t) => {
+    const li = no("li", t);
+    li.className = "vazio";
+    li.setAttribute("aria-disabled", "true");
+    ulV.appendChild(li);
+  };
+  if (!estado.frota) {
+    msg(estado.carregando ? "Carregando a frota..." : "A frota não foi carregada. Use \"Tentar de novo\".");
+    return;
+  }
+  const itens = filtraCombo();
+  if (!itens.length) { msg("Nenhum veículo encontrado."); return; }
+  combo.opcoes = itens;
+  itens.forEach((v, i) => {
+    const li = no("li", v.nome);
+    li.id = "opc" + i;
+    li.dataset.i = i;
+    li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", combo.sel === v ? "true" : "false");
+    ulV.appendChild(li);
+  });
+  combo.ativo = combo.sel ? itens.indexOf(combo.sel) : (itens.length === 1 ? 0 : -1);
+  marcaAtivo(!ulV.hidden);
+}
+
+function abrirCombo() {
+  ulV.hidden = false;
+  inpV.setAttribute("aria-expanded", "true");
+  desenhaCombo();
+  if (toqueNaTela()) { /* no celular, sobe o campo para a lista não ficar atrás do teclado */
+    const topo = $("combo").getBoundingClientRect().top + window.scrollY - 12;
+    window.scrollTo({ top: Math.max(0, topo), behavior: "smooth" });
+  }
+}
+function fechaCombo() {
+  ulV.hidden = true;
+  inpV.setAttribute("aria-expanded", "false");
+}
+function escolheVeiculo(v) {
+  combo.sel = v;
+  inpV.value = v.nome;
+  fechaCombo();
+  inpV.blur();
+  renderItinerario();
+  if (toqueNaTela()) window.scrollTo({ top: 0, behavior: "smooth" }); /* volta ao letreiro com o código */
+}
+
+inpV.addEventListener("focus", () => {
+  abrirCombo();
+  setTimeout(() => inpV.select(), 0);
+});
+inpV.addEventListener("click", () => { if (ulV.hidden) abrirCombo(); });
+inpV.addEventListener("input", () => {
+  combo.sel = null;
+  const exato = estado.frota && estado.frota.veiculos.get(chaveVeic(inpV.value));
+  if (exato) { escolheVeiculo(exato); return; } /* digitou o veículo inteiro: já escolhe */
+  if (ulV.hidden) abrirCombo(); else desenhaCombo();
+  renderItinerario();
+});
+inpV.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    if (ulV.hidden) { abrirCombo(); return; }
+    const n = combo.opcoes.length;
+    if (!n) return;
+    if (e.key === "ArrowDown") combo.ativo = (combo.ativo + 1) % n;
+    else combo.ativo = combo.ativo <= 0 ? n - 1 : combo.ativo - 1;
+    marcaAtivo(true);
+  } else if (e.key === "Enter") {
+    if (!ulV.hidden && combo.ativo >= 0) { e.preventDefault(); escolheVeiculo(combo.opcoes[combo.ativo]); }
+  } else if (e.key === "Escape") {
+    if (!ulV.hidden) { e.preventDefault(); fechaCombo(); }
+  } else if (e.key === "Tab") {
+    fechaCombo();
+  }
+});
+ulV.addEventListener("mousedown", (e) => e.preventDefault()); /* não tira o foco do campo ao tocar na lista */
+ulV.addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-i]");
+  if (li) escolheVeiculo(combo.opcoes[Number(li.dataset.i)]);
+});
+document.addEventListener("pointerdown", (e) => {
+  if (!$("combo").contains(e.target)) fechaCombo();
+});
 
 function no(tag, texto) {
   const e = document.createElement(tag);
@@ -940,7 +1066,8 @@ function mostraResultado(classe, linhas, botaoTentar) {
 
 function renderItinerario() {
   const rot = $("itRoteiro").value;
-  const vtxt = $("itVeiculo").value.trim();
+  const veic = combo.sel;
+  const digitado = inpV.value.trim();
   const P = { led: "itLed", cod: "itCodigo", cid: "itCidade" };
 
   let codigo = "Bandeira", cidade = "Escolha roteiro e veículo", vazio = true;
@@ -962,7 +1089,7 @@ function renderItinerario() {
 
   if (!estado.equip || !estado.frota) {
     if (estado.carregando) return fim("", ["Carregando os códigos da planilha..."]);
-    if (estado.erro) return fim("erro", [estado.erro], true);
+    if (estado.erro) return fim("erro", [estado.erro, estado.detalhe], true);
     if (estado.quando) {
       const falta = !estado.equip ? "EQUIPAMENTOS" : "frota";
       return fim("erro", ["A aba " + falta + " não foi encontrada (ou está vazia) na planilha."], true);
@@ -970,22 +1097,13 @@ function renderItinerario() {
     return fim("", ["Carregando os códigos da planilha..."]);
   }
 
-  if (!rot || !vtxt) {
-    return fim("", ["Escolha o roteiro e informe o veículo para ver o código da bandeira."]);
+  if (veic) esq = veic.nome;
+  if (!rot || !veic) {
+    return fim("", [digitado && !veic
+      ? "Toque em um veículo da lista para escolhê-lo."
+      : "Escolha o roteiro e o veículo para ver o código da bandeira."]);
   }
 
-  const achou = buscaVeiculo(vtxt);
-  if (!achou.item) {
-    codigo = "Veículo?"; cidade = "Não encontrado na frota";
-    esq = vtxt.toUpperCase();
-    if (achou.ambiguo) {
-      return fim("aviso", ["Há mais de um veículo com esse número: " + achou.ambiguo.join(", ") + ". Informe também a sigla."]);
-    }
-    return fim("erro", ["O veículo " + vtxt.toUpperCase() + " não está na aba frota. Confira o número ou peça ao administrador para cadastrá-lo."]);
-  }
-
-  const veic = achou.item;
-  esq = veic.nome;
   const linha = estado.equip.linhas.get(chaveRoteiro(rot));
   if (!linha) {
     codigo = "—"; cidade = "Roteiro sem código";
@@ -1015,8 +1133,6 @@ function renderItinerario() {
   return fim("ok", linhas);
 }
 $("itRoteiro").addEventListener("change", renderItinerario);
-$("itVeiculo").addEventListener("input", renderItinerario);
-$("itVeiculo").addEventListener("change", renderItinerario);
 $("itAtualizar").addEventListener("click", carregarDados);
 
 /* ==========================
