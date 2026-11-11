@@ -36,17 +36,35 @@
     }
 
     * { box-sizing:border-box; }
+    [hidden] { display:none !important; }
     html { -webkit-text-size-adjust:100%; }
     body {
       margin:0; background:var(--paper); color:var(--text);
       font-family:var(--f-body); font-size:17px; line-height:1.4;
     }
 
-    /* ---------- topo + letreiro ---------- */
+    /* ---------- topo + abas + letreiro ---------- */
     .topo { background:var(--ink); color:#fff; padding:20px 16px 44px; }
     .topo-in { max-width:560px; margin:0 auto; }
+    .titulo-linha { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
     h1 { margin:0; font-family:var(--f-disp); font-weight:700; font-size:26px; letter-spacing:.01em; }
-    .sub { margin:2px 0 16px; color:#9db3d1; font-size:15px; }
+    .sub { margin:2px 0 10px; color:#9db3d1; font-size:15px; }
+
+    .btn-admin {
+      flex:none; width:44px; height:44px; padding:0; border-radius:50%; cursor:pointer;
+      display:grid; place-items:center; color:#cfe0f7;
+      border:1.5px solid rgba(255,255,255,.25); background:rgba(255,255,255,.08);
+    }
+    .btn-admin svg { width:22px; height:22px; }
+    .btn-admin.ativo { color:var(--amber); border-color:var(--amber); }
+
+    .abas { display:flex; gap:18px; margin:0 0 16px; border-bottom:1px solid rgba(255,255,255,.14); overflow-x:auto; }
+    .aba {
+      appearance:none; background:none; border:none; border-bottom:3px solid transparent; margin-bottom:-1px;
+      padding:10px 0; color:#9db3d1; font:inherit; font-weight:600; font-size:17px; cursor:pointer; white-space:nowrap; border-radius:0;
+    }
+    .aba[aria-current="true"] { color:#fff; border-bottom-color:var(--amber); }
+    .aba:focus-visible { outline:3px solid var(--amber); outline-offset:-3px; border-color:transparent; }
 
     .letreiro {
       background:var(--led-bg); border-radius:12px; padding:16px 18px 14px;
@@ -64,6 +82,7 @@
       overflow-wrap:anywhere;
     }
     .codigo.longo { font-size:clamp(34px, 10.5vw, 54px); }
+    .codigo.curto { font-size:clamp(84px, 31vw, 136px); letter-spacing:.03em; } /* código numérico da bandeira */
     .cidade {
       font-family:var(--f-disp); font-weight:600; font-size:26px; line-height:1.15;
       margin-top:6px; text-transform:uppercase; letter-spacing:.03em;
@@ -71,11 +90,11 @@
     .led.troca .codigo, .led.troca .cidade { animation:troca .22s ease-out; }
     @keyframes troca { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 
-    .linha-status { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; min-height:34px; }
+    .linha-status { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px; margin-top:14px; min-height:34px; }
     .status { display:inline-flex; align-items:center; gap:8px; color:#c9d6ea; font-weight:600; font-size:15px; }
     .dot { width:10px; height:10px; border-radius:50%; background:#3b4b66; flex:none; }
     .dot.ativo { background:#33d17a; box-shadow:0 0 0 3px rgba(51,209,122,.22); }
-    .hora { font-family:var(--f-disp); font-weight:700; font-size:30px; color:var(--amber); letter-spacing:.04em; }
+    .hora { margin-left:auto; font-family:var(--f-disp); font-weight:700; font-size:28px; color:var(--amber); letter-spacing:.04em; }
 
     /* ---------- formulário ---------- */
     .folha {
@@ -86,11 +105,12 @@
     .rotulo { display:block; font-weight:600; font-size:15px; color:var(--muted); margin-bottom:8px; }
     .opcional { font-weight:400; }
 
-    input[type="text"], input[type="date"], input[type="time"], select, textarea {
+    input[type="text"], input[type="date"], input[type="time"], input[type="password"], select, textarea {
       width:100%; min-height:52px; padding:12px 14px; font:inherit; font-size:17px; color:var(--text);
       background:var(--field); border:1.5px solid var(--line); border-radius:10px;
       appearance:none; -webkit-appearance:none;
     }
+    ::placeholder { color:var(--muted); opacity:.7; }
     textarea { resize:vertical; min-height:84px; }
     select {
       padding-right:42px; text-overflow:ellipsis;
@@ -134,6 +154,10 @@
       font:inherit; font-weight:700; font-size:16px;
     }
     @media (prefers-color-scheme: dark) { button.secundario { border-color:var(--amber); color:var(--amber); } }
+    button.texto {
+      background:none; border:none; padding:0 4px; min-height:44px; cursor:pointer;
+      color:var(--muted); font:inherit; font-size:15px; font-weight:600; text-decoration:underline;
+    }
 
     .campo.erro input[type="text"], .campo.erro input[type="date"], .campo.erro input[type="time"],
     .campo.erro select, .campo.erro .chip span, .campo.erro .tile span { border-color:var(--err); }
@@ -143,19 +167,48 @@
       position:sticky; bottom:0; margin:0 -16px; padding:14px 16px calc(14px + env(safe-area-inset-bottom));
       background:linear-gradient(to top, var(--sheet) 78%, transparent);
     }
-    button#enviar {
-      width:100%; min-height:56px; border:none; border-radius:14px; cursor:pointer;
+    button.principal {
+      min-height:56px; border:none; border-radius:14px; cursor:pointer;
       background:var(--amber); color:var(--ink); font-family:var(--f-body); font-weight:700; font-size:18px;
       box-shadow:0 6px 16px rgba(255,184,28,.35);
     }
-    button#enviar:active { transform:translateY(1px); }
-    button#enviar:disabled { opacity:.65; cursor:default; box-shadow:none; }
+    .barra .principal { width:100%; }
+    button.principal:active { transform:translateY(1px); }
+    button.principal:disabled { opacity:.65; cursor:default; box-shadow:none; }
+
+    /* ---------- itinerário ---------- */
+    .resultado {
+      margin:4px 0 12px; padding:14px 16px; border-radius:12px;
+      border:1.5px solid var(--line); background:var(--field);
+    }
+    .resultado p { margin:0; }
+    .resultado p + p { margin-top:8px; }
+    .resultado strong { font-family:var(--f-disp); font-size:1.55em; letter-spacing:.03em; line-height:1; }
+    .resultado.ok { background:rgba(15,138,75,.12); border-color:rgba(15,138,75,.55); }
+    .resultado.aviso { background:rgba(255,184,28,.16); border-color:rgba(255,184,28,.7); }
+    .resultado.erro { background:rgba(198,40,40,.1); border-color:rgba(198,40,40,.55); }
+    .resultado button.secundario { margin-top:12px; min-height:44px; }
+    .rodape-it { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-bottom:18px; color:var(--muted); font-size:14px; }
+    .ajuda { margin:-8px 0 20px; color:var(--muted); font-size:14px; overflow-wrap:anywhere; }
 
     footer { text-align:center; padding:18px 16px 28px; color:var(--muted); font-size:14px; background:var(--sheet); max-width:560px; margin:0 auto; }
 
+    /* ---------- administrador (senha) ---------- */
+    .modal {
+      position:fixed; inset:0; z-index:20; background:rgba(5,11,22,.62);
+      display:flex; align-items:flex-end; justify-content:center; padding:16px;
+    }
+    @media (min-width:560px) { .modal { align-items:center; } }
+    .modal-caixa { width:100%; max-width:380px; background:var(--sheet); color:var(--text); border-radius:20px; padding:22px 18px 18px; }
+    .modal-caixa h2 { margin:0 0 14px; font-family:var(--f-disp); font-weight:700; font-size:26px; }
+    .modal-acoes { display:flex; gap:10px; margin-top:16px; }
+    .modal-acoes .secundario { flex:1; }
+    .modal-acoes .principal { flex:1.4; }
+    .erro-txt { margin:10px 0 0; color:var(--err); font-weight:600; }
+
     /* ---------- aviso ---------- */
     #toast {
-      position:fixed; left:50%; top:calc(12px + env(safe-area-inset-top)); z-index:10;
+      position:fixed; left:50%; top:calc(12px + env(safe-area-inset-top)); z-index:30;
       width:calc(100% - 32px); max-width:520px; padding:14px 16px; border-radius:12px;
       color:#fff; font-weight:600; opacity:0; transform:translate(-50%, -12px); pointer-events:none;
       transition:opacity .2s, transform .2s;
@@ -175,10 +228,21 @@
 
 <header class="topo">
   <div class="topo-in">
-    <h1>Registro de roteiros</h1>
-    <p class="sub">Operação BYD</p>
+    <div class="titulo-linha">
+      <div>
+        <h1 id="titulo">Registro de roteiros</h1>
+        <p class="sub">Operação BYD</p>
+      </div>
+      <button type="button" class="btn-admin" id="btnAdmin" aria-label="Acesso do administrador" title="Acesso do administrador"></button>
+    </div>
 
-    <div class="letreiro" aria-hidden="true">
+    <nav class="abas" aria-label="Seções do painel">
+      <button type="button" class="aba" id="tabRegistro" data-view="registro" aria-current="true">Registro</button>
+      <button type="button" class="aba" id="tabItin" data-view="itin">Itinerário</button>
+      <button type="button" class="aba" id="tabAdmin" data-view="admin" hidden>Administrador</button>
+    </nav>
+
+    <div class="letreiro" id="letreiroRegistro" aria-hidden="true">
       <div class="led vazio" id="led">
         <div class="codigo" id="ledCodigo">Roteiro</div>
         <div class="cidade" id="ledCidade">Escolha o turno</div>
@@ -188,10 +252,22 @@
         <span class="hora" id="ledHora"></span>
       </div>
     </div>
+
+    <div class="letreiro" id="letreiroItin" aria-hidden="true" hidden>
+      <div class="led vazio" id="itLed">
+        <div class="codigo" id="itCodigo">Bandeira</div>
+        <div class="cidade" id="itCidade">Escolha roteiro e veículo</div>
+      </div>
+      <div class="linha-status">
+        <span class="status"><i class="dot" id="itDot"></i><span id="itStatus">Aguardando seleção</span></span>
+        <span class="hora" id="itRot"></span>
+      </div>
+    </div>
   </div>
 </header>
 
-<main class="folha">
+<!-- ============ REGISTRO ============ -->
+<main class="folha" id="viewRegistro">
   <form id="form" novalidate autocomplete="off">
 
     <div class="campo">
@@ -256,12 +332,74 @@
     </div>
 
     <div class="barra">
-      <button id="enviar" type="submit">Enviar registro</button>
+      <button id="enviar" class="principal" type="submit">Enviar registro</button>
     </div>
   </form>
 </main>
 
+<!-- ============ ITINERÁRIO ============ -->
+<main class="folha" id="viewItin" hidden>
+  <div class="campo">
+    <label class="rotulo" for="itRoteiro">Roteiro</label>
+    <select id="itRoteiro"></select>
+  </div>
+
+  <div class="campo">
+    <label class="rotulo" for="itVeiculo">Veículo</label>
+    <input id="itVeiculo" type="text" list="listaFrota" autocomplete="off" autocapitalize="characters" placeholder="Ex.: CS 10740" />
+    <datalist id="listaFrota"></datalist>
+  </div>
+
+  <div class="resultado" id="itResultado" role="status" aria-live="polite"></div>
+
+  <div class="rodape-it">
+    <span id="itCarga"></span>
+    <button type="button" class="texto" id="itAtualizar">Atualizar códigos</button>
+  </div>
+</main>
+
+<!-- ============ ADMINISTRADOR ============ -->
+<main class="folha" id="viewAdmin" hidden>
+  <form id="admForm" novalidate autocomplete="off">
+    <div class="campo" id="gAdmTipo">
+      <span class="rotulo" id="lAdmTipo">Tipo de itinerário</span>
+      <div class="chips" id="admTipos" role="radiogroup" aria-labelledby="lAdmTipo"></div>
+    </div>
+
+    <div class="campo">
+      <label class="rotulo" for="admVeiculo">Veículo</label>
+      <input id="admVeiculo" type="text" autocomplete="off" autocapitalize="characters" placeholder="Ex.: CS 10740" />
+    </div>
+
+    <p class="ajuda" id="admLista"></p>
+
+    <div class="barra">
+      <button id="admEnviar" class="principal" type="submit">Cadastrar veículo</button>
+    </div>
+  </form>
+  <div class="rodape-it">
+    <span>Modo administrador ativo</span>
+    <button type="button" class="texto" id="admSair">Sair</button>
+  </div>
+</main>
+
 <footer>&copy; Operação BYD</footer>
+
+<!-- senha do administrador -->
+<div class="modal" id="modalSenha" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="mTitulo">
+    <h2 id="mTitulo">Acesso do administrador</h2>
+    <form id="formSenha" novalidate>
+      <label class="rotulo" for="senha">Senha</label>
+      <input id="senha" type="password" autocomplete="off" autocapitalize="characters" />
+      <p class="erro-txt" id="senhaErro" hidden></p>
+      <div class="modal-acoes">
+        <button type="button" class="secundario" id="senhaCancelar">Cancelar</button>
+        <button type="submit" class="principal" id="senhaEntrar">Entrar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
@@ -341,7 +479,7 @@ const ROTEIROS = {
   ],
   "ADM": [
     "ADM 231 - CAMAÇARI",
-    "ADM 47 - SALVADOR"
+    "ADM 47 - SALVADOR",
     "ADM - 160 - MATA DE SÃO JOÃO",
     "ADM 01 - SALVADOR",
     "ADM 03 - SALVADOR",
@@ -382,6 +520,17 @@ const ROTEIROS = {
   ]
 };
 
+/* Tipos de itinerário (equipamento da bandeira). "chave" é como o painel reconhece
+   o cabeçalho das colunas nas abas EQUIPAMENTOS e frota. */
+const TIPOS = [
+  { id: "mobtec", chave: "MOBTEC/LIGHTDOT", rotulo: "MOBTEC/LIGHTDOT" },
+  { id: "v11",    chave: "FRT V11",         rotulo: "FRT V11" },
+  { id: "valeo",  chave: "VALEO/SPHEROS",   rotulo: "VALEO/SPHEROS" },
+  { id: "v12",    chave: "FRT V12",         rotulo: "FRT v12" },
+  { id: "inova",  chave: "INOVA",           rotulo: "INOVA" }
+];
+const rotuloTipo = (id) => (TIPOS.find((t) => t.id === id) || {}).rotulo || id;
+
 const $ = (id) => document.getElementById(id);
 const form = $("form");
 const btn = $("enviar");
@@ -418,7 +567,59 @@ form.addEventListener("input", limpaErro);
 form.addEventListener("change", limpaErro);
 
 /* ==========================
-   TURNO -> ROTEIROS
+   LETREIRO (painel de LED)
+========================== */
+function partes(r) {
+  const p = r.split(" - ").map((s) => s.trim()).filter(Boolean);
+  if (p.length < 2) return { codigo: r, cidade: "" };
+  return { codigo: p.slice(0, -1).join(" · "), cidade: p[p.length - 1] };
+}
+
+function pintaLed(ids, codigo, cidade, vazio) {
+  const led = $(ids.led), c = $(ids.cod), d = $(ids.cid);
+  const mudou = c.textContent !== codigo || d.textContent !== cidade;
+  c.textContent = codigo;
+  d.textContent = cidade;
+  c.classList.toggle("longo", codigo.length > 12);
+  c.classList.toggle("curto", /^\d{1,4}$/.test(codigo));
+  led.classList.toggle("vazio", vazio);
+  if (mudou) {
+    led.classList.remove("troca");
+    void led.offsetWidth;
+    led.classList.add("troca");
+  }
+}
+
+/* ==========================
+   ABAS
+========================== */
+const TITULOS = { registro: "Registro de roteiros", itin: "Itinerário", admin: "Administrador" };
+const VIEWS = { registro: "viewRegistro", itin: "viewItin", admin: "viewAdmin" };
+const TABS = { registro: "tabRegistro", itin: "tabItin", admin: "tabAdmin" };
+let viewAtual = "registro";
+
+function mostrarView(nome) {
+  viewAtual = nome;
+  Object.keys(VIEWS).forEach((v) => {
+    $(VIEWS[v]).hidden = v !== nome;
+    $(TABS[v]).setAttribute("aria-current", v === nome ? "true" : "false");
+  });
+  $("letreiroRegistro").hidden = nome !== "registro";
+  $("letreiroItin").hidden = nome !== "itin";
+  $("titulo").textContent = TITULOS[nome];
+  if (nome === "itin") {
+    renderItinerario();
+    if (!estado.carregando && (!estado.quando || Date.now() - estado.quando > 5 * 60 * 1000)) carregarDados();
+  }
+  if (nome === "admin") renderAdminLista();
+  window.scrollTo({ top: 0 });
+}
+document.querySelectorAll(".aba").forEach((b) => {
+  b.addEventListener("click", () => mostrarView(b.dataset.view));
+});
+
+/* ==========================
+   REGISTRO: TURNO -> ROTEIROS
 ========================== */
 Object.keys(ROTEIROS).forEach((turno) => {
   const lab = document.createElement("label");
@@ -444,15 +645,6 @@ boxTurnos.addEventListener("change", () => {
   selRoteiro.disabled = false;
 });
 
-/* ==========================
-   LETREIRO (resumo ao vivo)
-========================== */
-function partes(r) {
-  const p = r.split(" - ").map((s) => s.trim()).filter(Boolean);
-  if (p.length < 2) return { codigo: r, cidade: "" };
-  return { codigo: p.slice(0, -1).join(" · "), cidade: p[p.length - 1] };
-}
-
 function renderLetreiro() {
   const turno = form.querySelector('input[name="turno"]:checked');
   const acao = form.querySelector('input[name="acao"]:checked');
@@ -466,18 +658,7 @@ function renderLetreiro() {
     codigo = turno.value; cidade = "Escolha o roteiro"; vazio = false;
   }
 
-  const led = $("led");
-  const mudou = $("ledCodigo").textContent !== codigo || $("ledCidade").textContent !== cidade;
-  $("ledCodigo").textContent = codigo;
-  $("ledCidade").textContent = cidade;
-  $("ledCodigo").classList.toggle("longo", codigo.length > 12);
-  led.classList.toggle("vazio", vazio);
-  if (mudou) {
-    led.classList.remove("troca");
-    void led.offsetWidth;
-    led.classList.add("troca");
-  }
-
+  pintaLed({ led: "led", cod: "ledCodigo", cid: "ledCidade" }, codigo, cidade, vazio);
   $("ledStatus").textContent = acao ? acao.value : "Aguardando registro";
   $("ledDot").classList.toggle("ativo", !!acao);
   $("ledHora").textContent = $("horario").value;
@@ -486,7 +667,7 @@ form.addEventListener("change", renderLetreiro);
 form.addEventListener("input", renderLetreiro);
 
 /* ==========================
-   DATA E HORA
+   REGISTRO: DATA E HORA
 ========================== */
 function hojeISO() {
   const d = new Date();
@@ -504,7 +685,7 @@ $("agora").addEventListener("click", () => {
 });
 
 /* ==========================
-   ENVIO
+   REGISTRO: ENVIO
 ========================== */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -564,7 +745,434 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
+/* ==========================
+   ITINERÁRIO: DADOS DA PLANILHA (abas EQUIPAMENTOS e frota)
+========================== */
+const semAcento = (s) => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+/* "INTINERÁRIOS FRT v12" -> "FRT V12" */
+function chaveTipo(h) {
+  return semAcento(h).toUpperCase().replace(/\s+/g, " ").trim().replace(/^(INTINERARIOS|ITINERARIOS)\s+/, "");
+}
+
+/* Identifica o roteiro pelo código, ignorando o nome da cidade e zeros à esquerda:
+   "ADM 01 - SALVADOR" e "ADM 01 SALVADOR" -> "ADM 1" ; "T3 - R04 - SALVADOR" -> "T3 R4" */
+function chaveRoteiro(s) {
+  const t = semAcento(s).toUpperCase().replace(/[-–]/g, " ").replace(/\s+/g, " ").trim();
+  let m;
+  if ((m = t.match(/^ADM\s*0*(\d+)\b/))) return "ADM " + m[1];
+  if ((m = t.match(/^(T[123])\s*R?\s*0*(\d+)\b/))) return m[1] + " R" + m[2];
+  if ((m = t.match(/^(\d{1,2}H AS [\d:]+)\s*R?\s*0*(\d+)\b/))) return m[1] + " R" + m[2];
+  return t;
+}
+
+/* "rt-10485" -> "RT 10485" */
+function normVeic(s) {
+  const t = String(s).toUpperCase().replace(/[-\s]+/g, " ").trim();
+  const m = t.match(/^([A-Z]+)\s*(\d+)$/);
+  return m ? m[1] + " " + m[2] : t;
+}
+const chaveVeic = (s) => semAcento(s).toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+/* "CS 7010 (DEFEITO)" -> { nome: "CS 7010", obs: "DEFEITO" } */
+function separaObs(cel) {
+  const m = cel.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+  return m ? { nome: m[1], obs: m[2].trim() } : { nome: cel, obs: "" };
+}
+
+const estado = { equip: null, frota: null, carregando: false, erro: "", quando: 0 };
+
+function prepararEquip(v) {
+  if (!v || !v.length) return null;
+  const colTipo = {};
+  v[0].forEach((h, i) => {
+    const t = TIPOS.find((x) => x.chave === chaveTipo(h));
+    if (t) colTipo[i] = t.id;
+  });
+  const linhas = new Map();
+  v.slice(1).forEach((r) => {
+    const nome = String(r[0] || "").trim();
+    if (!nome) return;
+    const k = chaveRoteiro(nome);
+    if (linhas.has(k)) return;
+    const codigos = {};
+    Object.keys(colTipo).forEach((i) => {
+      codigos[colTipo[i]] = String(r[i] === undefined ? "" : r[i]).trim();
+    });
+    linhas.set(k, { nome: nome, codigos: codigos });
+  });
+  return { linhas: linhas };
+}
+
+function prepararFrota(v) {
+  if (!v || !v.length) return null;
+  const veiculos = new Map();
+  const porNumero = new Map();
+  const porTipo = {};
+  TIPOS.forEach((t) => { porTipo[t.id] = []; });
+
+  v[0].forEach((h, c) => {
+    const t = TIPOS.find((x) => x.chave === chaveTipo(h));
+    if (!t) return;
+    for (let r = 1; r < v.length; r++) {
+      const cel = String(v[r][c] === undefined ? "" : v[r][c]).trim();
+      if (!cel) continue;
+      const sep = separaObs(cel);
+      const k = chaveVeic(sep.nome);
+      if (!k) continue;
+      let item = veiculos.get(k);
+      if (!item) {
+        item = { nome: normVeic(sep.nome), tipos: [], obs: {} };
+        veiculos.set(k, item);
+        const num = k.replace(/^[A-Z]+/, "");
+        if (!porNumero.has(num)) porNumero.set(num, []);
+        porNumero.get(num).push(item);
+      }
+      if (!item.tipos.includes(t.id)) {
+        item.tipos.push(t.id);
+        porTipo[t.id].push(item.nome);
+      }
+      if (sep.obs) item.obs[t.id] = sep.obs;
+    }
+  });
+  return { veiculos: veiculos, porNumero: porNumero, porTipo: porTipo };
+}
+
+async function carregarDados() {
+  if (estado.carregando) return;
+  estado.carregando = true;
+  renderItinerario();
+  try {
+    const resp = await fetch(SHEETS_WEBAPP_URL, { method: "GET", cache: "no-store" });
+    const json = await resp.json();
+    if (json.status !== "ok") throw new Error(json.message || "Erro");
+    estado.equip = prepararEquip(json.equipamentos);
+    estado.frota = prepararFrota(json.frota);
+    estado.erro = "";
+    estado.quando = Date.now();
+  } catch (err) {
+    console.error(err);
+    estado.erro = "Não foi possível carregar os códigos. Verifique a conexão.";
+  } finally {
+    estado.carregando = false;
+    preencheFrota();
+    renderItinerario();
+    renderAdminLista();
+  }
+}
+
+/* sugestões do campo Veículo (ordem natural: CS 8940, CS 9740, CS 10720...) */
+function preencheFrota() {
+  const dl = $("listaFrota");
+  dl.innerHTML = "";
+  if (!estado.frota) return;
+  Array.from(estado.frota.veiculos.values())
+    .map((v) => v.nome)
+    .sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }))
+    .forEach((n) => {
+      const op = document.createElement("option");
+      op.value = n;
+      dl.appendChild(op);
+    });
+}
+
+/* ==========================
+   ITINERÁRIO: TELA
+========================== */
+/* lista de roteiros agrupada por turno */
+(function montaRoteirosItin() {
+  const sel = $("itRoteiro");
+  const ph = document.createElement("option");
+  ph.value = "";
+  ph.textContent = "Selecione o roteiro";
+  sel.appendChild(ph);
+  Object.keys(ROTEIROS).forEach((turno) => {
+    const g = document.createElement("optgroup");
+    g.label = turno;
+    ROTEIROS[turno].forEach((r) => {
+      const op = document.createElement("option");
+      op.value = op.textContent = r;
+      g.appendChild(op);
+    });
+    sel.appendChild(g);
+  });
+})();
+
+function buscaVeiculo(txt) {
+  const k = chaveVeic(txt);
+  if (!k || !estado.frota) return { item: null };
+  const exato = estado.frota.veiculos.get(k);
+  if (exato) return { item: exato };
+  if (/^\d+$/.test(k)) { /* só o número: aceita se for único na frota */
+    const lista = estado.frota.porNumero.get(k) || [];
+    if (lista.length === 1) return { item: lista[0] };
+    if (lista.length > 1) return { item: null, ambiguo: lista.map((x) => x.nome) };
+  }
+  return { item: null };
+}
+
+function no(tag, texto) {
+  const e = document.createElement(tag);
+  if (texto !== undefined) e.textContent = texto;
+  return e;
+}
+
+function mostraResultado(classe, linhas, botaoTentar) {
+  const box = $("itResultado");
+  box.className = "resultado" + (classe ? " " + classe : "");
+  box.innerHTML = "";
+  linhas.forEach((l) => {
+    const p = no("p");
+    (Array.isArray(l) ? l : [l]).forEach((parte) => {
+      if (typeof parte === "string") p.appendChild(document.createTextNode(parte));
+      else p.appendChild(parte);
+    });
+    box.appendChild(p);
+  });
+  if (botaoTentar) {
+    const b = no("button", "Tentar de novo");
+    b.type = "button";
+    b.className = "secundario";
+    b.addEventListener("click", carregarDados);
+    box.appendChild(b);
+  }
+}
+
+function renderItinerario() {
+  const rot = $("itRoteiro").value;
+  const vtxt = $("itVeiculo").value.trim();
+  const P = { led: "itLed", cod: "itCodigo", cid: "itCidade" };
+
+  let codigo = "Bandeira", cidade = "Escolha roteiro e veículo", vazio = true;
+  let esq = "Aguardando seleção", ok = false;
+  const dir = rot ? partes(rot).codigo : "";
+
+  const carga = $("itCarga");
+  carga.textContent = estado.quando
+    ? "Códigos carregados às " + new Date(estado.quando).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : "";
+
+  function fim(classe, linhas, tentar) {
+    pintaLed(P, codigo, cidade, vazio);
+    $("itStatus").textContent = esq;
+    $("itDot").classList.toggle("ativo", ok);
+    $("itRot").textContent = dir;
+    mostraResultado(classe, linhas, tentar);
+  }
+
+  if (!estado.equip || !estado.frota) {
+    if (estado.carregando) return fim("", ["Carregando os códigos da planilha..."]);
+    if (estado.erro) return fim("erro", [estado.erro], true);
+    if (estado.quando) {
+      const falta = !estado.equip ? "EQUIPAMENTOS" : "frota";
+      return fim("erro", ["A aba " + falta + " não foi encontrada (ou está vazia) na planilha."], true);
+    }
+    return fim("", ["Carregando os códigos da planilha..."]);
+  }
+
+  if (!rot || !vtxt) {
+    return fim("", ["Escolha o roteiro e informe o veículo para ver o código da bandeira."]);
+  }
+
+  const achou = buscaVeiculo(vtxt);
+  if (!achou.item) {
+    codigo = "Veículo?"; cidade = "Não encontrado na frota";
+    esq = vtxt.toUpperCase();
+    if (achou.ambiguo) {
+      return fim("aviso", ["Há mais de um veículo com esse número: " + achou.ambiguo.join(", ") + ". Informe também a sigla."]);
+    }
+    return fim("erro", ["O veículo " + vtxt.toUpperCase() + " não está na aba frota. Confira o número ou peça ao administrador para cadastrá-lo."]);
+  }
+
+  const veic = achou.item;
+  esq = veic.nome;
+  const linha = estado.equip.linhas.get(chaveRoteiro(rot));
+  if (!linha) {
+    codigo = "—"; cidade = "Roteiro sem código";
+    return fim("aviso", ["O roteiro " + rot + " não está na aba EQUIPAMENTOS."]);
+  }
+
+  if (veic.tipos.length > 1) {
+    codigo = "?"; cidade = "Veículo em " + veic.tipos.length + " tipos";
+    const itens = veic.tipos.map((t) => rotuloTipo(t) + ": " + (linha.codigos[t] || "sem código"));
+    return fim("aviso", [
+      "O veículo " + veic.nome + " está cadastrado em mais de um tipo (" + itens.join("; ") + ").",
+      "Peça ao administrador para corrigir a aba frota."
+    ]);
+  }
+
+  const tipo = veic.tipos[0];
+  const cod = linha.codigos[tipo] || "";
+  cidade = rotuloTipo(tipo);
+  if (!cod) {
+    codigo = "—";
+    return fim("aviso", ["Não há código de " + rotuloTipo(tipo) + " para este roteiro na aba EQUIPAMENTOS."]);
+  }
+
+  codigo = cod; vazio = false; ok = true;
+  const linhas = [["Digite ", no("strong", cod), " na bandeira digital do veículo " + veic.nome + "."]];
+  if (veic.obs[tipo]) linhas.push("Observação na frota: " + veic.obs[tipo] + ".");
+  return fim("ok", linhas);
+}
+$("itRoteiro").addEventListener("change", renderItinerario);
+$("itVeiculo").addEventListener("input", renderItinerario);
+$("itVeiculo").addEventListener("change", renderItinerario);
+$("itAtualizar").addEventListener("click", carregarDados);
+
+/* ==========================
+   ADMINISTRADOR
+========================== */
+const ICONE_FECHADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const ICONE_ABERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.6-1.7"/></svg>';
+let adminSenha = null; /* só na memória: some ao fechar ou atualizar a página */
+
+$("btnAdmin").innerHTML = ICONE_FECHADO;
+
+function abrirModal() {
+  $("senha").value = "";
+  $("senhaErro").hidden = true;
+  $("modalSenha").hidden = false;
+  setTimeout(() => $("senha").focus(), 30);
+}
+function fecharModal() {
+  $("modalSenha").hidden = true;
+  $("btnAdmin").focus();
+}
+$("btnAdmin").addEventListener("click", () => {
+  if (adminSenha) mostrarView("admin"); else abrirModal();
+});
+$("senhaCancelar").addEventListener("click", fecharModal);
+$("modalSenha").addEventListener("click", (e) => { if (e.target === $("modalSenha")) fecharModal(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !$("modalSenha").hidden) fecharModal();
+});
+
+function entrarAdmin(senha) {
+  adminSenha = senha;
+  $("tabAdmin").hidden = false;
+  $("btnAdmin").innerHTML = ICONE_ABERTO;
+  $("btnAdmin").classList.add("ativo");
+}
+function sairAdmin() {
+  adminSenha = null;
+  $("tabAdmin").hidden = true;
+  $("btnAdmin").innerHTML = ICONE_FECHADO;
+  $("btnAdmin").classList.remove("ativo");
+  if (viewAtual === "admin") mostrarView("registro");
+}
+$("admSair").addEventListener("click", sairAdmin);
+
+$("formSenha").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const senha = $("senha").value;
+  const entrar = $("senhaEntrar");
+  if (entrar.disabled) return;
+  if (!senha) {
+    $("senhaErro").textContent = "Digite a senha.";
+    $("senhaErro").hidden = false;
+    return;
+  }
+  entrar.disabled = true;
+  entrar.textContent = "Verificando...";
+  try {
+    const resp = await fetch(SHEETS_WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ tipo: "admin_login", senha: senha })
+    });
+    const json = await resp.json();
+    if (json.status !== "ok") {
+      $("senhaErro").textContent = "Senha incorreta.";
+      $("senhaErro").hidden = false;
+      $("senha").select();
+      return;
+    }
+    entrarAdmin(senha);
+    $("modalSenha").hidden = true;
+    mostrarView("admin");
+    if (!estado.frota) carregarDados();
+  } catch (err) {
+    console.error(err);
+    $("senhaErro").textContent = "Não foi possível verificar. Verifique a conexão e tente de novo.";
+    $("senhaErro").hidden = false;
+  } finally {
+    entrar.disabled = false;
+    entrar.textContent = "Entrar";
+  }
+});
+
+/* tipos de itinerário (chips) */
+TIPOS.forEach((t) => {
+  const lab = document.createElement("label");
+  lab.className = "chip";
+  lab.innerHTML = '<input type="radio" name="admTipo"><span></span>';
+  lab.querySelector("input").value = t.id;
+  lab.querySelector("span").textContent = t.rotulo;
+  $("admTipos").appendChild(lab);
+});
+
+function renderAdminLista() {
+  const sel = $("admForm").querySelector('input[name="admTipo"]:checked');
+  const p = $("admLista");
+  if (!sel) { p.textContent = ""; return; }
+  if (!estado.frota) { p.textContent = estado.carregando ? "Carregando a frota..." : ""; return; }
+  const lista = estado.frota.porTipo[sel.value] || [];
+  p.textContent = lista.length
+    ? "Já cadastrados em " + rotuloTipo(sel.value) + " (" + lista.length + "): " + lista.join(", ")
+    : "Nenhum veículo cadastrado em " + rotuloTipo(sel.value) + " ainda.";
+}
+$("admForm").addEventListener("change", renderAdminLista);
+$("admForm").addEventListener("input", limpaErro);
+$("admForm").addEventListener("change", limpaErro);
+
+$("admForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const enviar = $("admEnviar");
+  if (enviar.disabled) return;
+  const tipo = $("admForm").querySelector('input[name="admTipo"]:checked');
+  const veiculo = $("admVeiculo").value.trim();
+
+  if (!tipo) return invalido($("gAdmTipo"), "Selecione o tipo de itinerário.");
+  if (!veiculo) return invalido($("admVeiculo"), "Informe o veículo.");
+  if (!adminSenha) { sairAdmin(); return abrirModal(); }
+
+  enviar.disabled = true;
+  enviar.textContent = "Cadastrando...";
+  try {
+    const resp = await fetch(SHEETS_WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        tipo: "frota_cadastrar",
+        senha: adminSenha,
+        equipamento: tipo.value,
+        veiculo: veiculo
+      })
+    });
+    const json = await resp.json();
+    if (json.status !== "ok") {
+      if (json.message === "Senha incorreta.") { sairAdmin(); abrirModal(); }
+      aviso(json.message || "Não foi possível cadastrar.", "erro");
+      return;
+    }
+    aviso("Veículo " + json.veiculo + " cadastrado em " + rotuloTipo(tipo.value) + ".", "ok");
+    $("admVeiculo").value = "";
+    carregarDados(); /* atualiza a lista e as sugestões */
+  } catch (err) {
+    console.error(err);
+    aviso("Não foi possível cadastrar. Verifique a conexão e tente de novo.", "erro");
+  } finally {
+    enviar.disabled = false;
+    enviar.textContent = "Cadastrar veículo";
+  }
+});
+
+/* ==========================
+   INÍCIO
+========================== */
 renderLetreiro();
+renderItinerario();
+carregarDados();
 </script>
 
 </body>
